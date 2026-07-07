@@ -4,6 +4,32 @@ A lightweight local web app for browsing and filtering the Lichess puzzle
 database (`lichess_db_puzzle.csv`, ~1.1 GB, ~6 million puzzles) without ever
 loading the whole file into memory.
 
+## Features
+
+- **Two data sources, one UI**: a local Node server that indexes the CSV on
+  disk, or a CSV dropped straight onto the page and indexed in the browser
+  (works on static hosting such as GitHub Pages). The app auto-detects the
+  server and falls back to drop mode.
+- **Rating filter**: preset rating bands (Under 800 … 2400 and up) in a
+  single dropdown.
+- **Theme filter**: searchable multi-select dropdown over all 73 themes,
+  each with its puzzle count; selected themes combine with AND. A badge
+  shows how many are active, and *Clear* resets them.
+- **Live result summary**: match count plus the actual query time in ms,
+  updated on every filter change (debounced).
+- **Pagination**: first/prev/next/last buttons plus a jump-to-page input,
+  20 puzzles per page.
+- **Details panel**: click a row to see every CSV field — rating, deviation,
+  popularity, play count, FEN, solution moves, opening tags, themes — plus
+  links to solve the puzzle on lichess.org and to the source game.
+- **Board preview**: the actual position the solver faces (setup move
+  applied), oriented with the solver's side at the bottom, rendered with
+  chessboard.js.
+- **PNG export**: *Save Diagram* downloads the position as a 512×512 PNG;
+  *Copy Diagram* puts it on the clipboard.
+- **Fully offline**: no CDN, no npm packages — all vendor assets are
+  committed; a dropped CSV never leaves the machine.
+
 ## Project structure
 
 ```
@@ -42,7 +68,17 @@ start loads in about a second. If the CSV changes (size/mtime), the index is
 rebuilt automatically. Delete `puzzles.idx` to force a rebuild.
 
 If `lichess_db_puzzle.csv` is not present, the server still starts and serves
-the frontend; load data by dropping a CSV onto the page (below).
+the frontend; load data by dropping a CSV onto the page (below). API calls
+then return `503` and the frontend switches to drop mode automatically.
+
+### JSON API
+
+- `GET /api/meta` — dataset stats: total puzzles, rating min/max, and the
+  theme list with per-theme counts.
+- `GET /api/puzzles?page&pageSize&ratingMin&ratingMax&themes` — one filtered
+  page of full rows (`pageSize` defaults to 20, capped at 100; `themes` is
+  comma-separated and combined with AND). The response includes `total`,
+  `totalPages`, and the query time in `elapsedMs`.
 
 ## Drag & drop a CSV (no backend needed)
 
@@ -64,8 +100,9 @@ deployment below possible.
 ## Deploying to GitHub Pages
 
 `.github/workflows/deploy.yml` publishes `public/` to GitHub Pages on every
-push to `main`. One-time setup: in the repo, **Settings → Pages → Build and
-deployment → Source: GitHub Actions**.
+push to `main` (it can also be run manually via **Actions → Deploy to GitHub
+Pages → Run workflow**). One-time setup: in the repo, **Settings → Pages →
+Build and deployment → Source: GitHub Actions**.
 
 GitHub Pages is static hosting — there is no Node server, and the dataset
 cannot be committed anyway (GitHub rejects files over 100 MB; the CSV is
@@ -85,7 +122,7 @@ purely static approach fails on its own goals:
   Statically, the client would have to download index data (~100 MB) to do
   that, violating the "fast page load, low memory" goals.
 
-Given that a static server is unavoidable, a ~150-line dependency-free Node
+Given that a static server is unavoidable, a small dependency-free Node
 server that also answers filter queries is the minimal-setup option: one
 command, no packages, and the browser only ever receives 20 rows at a time.
 
@@ -137,8 +174,8 @@ chessboard.js is render-only, so the position math lives in
 `chess-preview.js` applies that move (including castling, en passant, and
 promotion) and serializes the result back to a FEN placement for
 chessboard.js. The board is oriented with the solver's side at the bottom,
-matching what lichess presents. The module has no DOM dependencies and is
-unit-tested in Node.
+matching what lichess presents. The module has no DOM dependencies, so it
+can be loaded and tested in plain Node.
 
 **Save / Copy diagram**: both buttons under the board share one export path —
 the position is redrawn onto a `<canvas>` (512×512) using the same piece
