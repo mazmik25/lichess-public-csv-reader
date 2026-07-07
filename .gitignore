@@ -7,6 +7,13 @@
 node_modules/
 npm-debug.log*
 
+# Local config / secrets — never commit environment files
+.env
+.env.*
+
+# Editor settings
+.vscode/
+
 # OS cruft
 .DS_Store
 Thumbs.db
