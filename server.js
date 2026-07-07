@@ -198,17 +198,24 @@ function sendJson(res, status, body) {
 /* ------------------------------------------------------------------ */
 
 async function main() {
-  if (!fs.existsSync(CSV_PATH)) {
-    console.error(`CSV not found at ${CSV_PATH}`);
-    process.exit(1);
+  // Without the CSV the server still serves the frontend; the browser then
+  // asks for a dropped CSV and does all indexing/filtering itself.
+  let index = null;
+  let csvFd = null;
+  if (fs.existsSync(CSV_PATH)) {
+    index = await loadOrBuild(CSV_PATH, IDX_PATH);
+    totalCache.set('', index.count); // unfiltered total is known up front
+    csvFd = fs.openSync(CSV_PATH, 'r');
+  } else {
+    console.warn(`CSV not found at ${CSV_PATH} — static mode; drop a CSV onto the page to load data.`);
   }
-  const index = await loadOrBuild(CSV_PATH, IDX_PATH);
-  totalCache.set('', index.count); // unfiltered total is known up front
-  const csvFd = fs.openSync(CSV_PATH, 'r');
 
   const server = http.createServer(async (req, res) => {
     const url = new URL(req.url, `http://${req.headers.host || 'localhost'}`);
     try {
+      if (url.pathname.startsWith('/api/') && !index) {
+        return sendJson(res, 503, { error: 'No dataset on the server; drop a CSV onto the page instead.' });
+      }
       if (url.pathname === '/api/meta') return handleMeta(index, res);
       if (url.pathname === '/api/puzzles') return await handlePuzzles(index, csvFd, url, res);
       return serveStatic(url, res);

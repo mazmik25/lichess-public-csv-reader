@@ -1,0 +1,13 @@
+# Dataset and its generated binary index — both far exceed GitHub's
+# 100 MB file limit (CSV ~1.1 GB, puzzles.idx ~110 MB). Never commit them.
+*.csv
+*.idx
+
+# Node
+node_modules/
+npm-debug.log*
+
+# OS cruft
+.DS_Store
+Thumbs.db
+Desktop.ini
