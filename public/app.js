@@ -3,11 +3,14 @@
 /**
  * app.js — frontend for the puzzle browser.
  *
- * All heavy lifting (filtering, pagination) happens server-side; this file
- * only tracks UI state, calls the API, and renders the current page of 20.
+ * All heavy lifting (filtering, pagination) happens in the data source —
+ * either the Node server's API or a dropped CSV indexed in-browser (see
+ * local-source.js). This file only tracks UI state, queries the source,
+ * and renders the current page of 20.
  *
  * To add a new filter later: add a control, include its value in
- * buildQuery(), and add the matching entry to FILTERS in server.js.
+ * buildQuery(), and add the matching entry to FILTERS in server.js and
+ * local-source.js.
  */
 
 const PAGE_SIZE = 20;
@@ -35,8 +38,15 @@ const state = {
 const $ = (id) => document.getElementById(id);
 
 /* ------------------------------------------------------------------ */
-/* API                                                                  */
+/* Data sources                                                         */
 /* ------------------------------------------------------------------ */
+/*
+ * The app can be fed two ways, behind one interface (getMeta/getPuzzles):
+ *   - remoteSource: the Node server's JSON API (local `node server.js`)
+ *   - LocalSource:  a CSV File dropped onto the page, indexed and queried
+ *     entirely in the browser (the only option on static hosting, e.g.
+ *     GitHub Pages, where there is no API)
+ */
 
 async function fetchJson(url) {
   const res = await fetch(url);
@@ -44,6 +54,13 @@ async function fetchJson(url) {
   if (!res.ok) throw new Error(body.error || `Request failed (${res.status})`);
   return body;
 }
+
+const remoteSource = {
+  getMeta: () => fetchJson('/api/meta'),
+  getPuzzles: (params) => fetchJson(`/api/puzzles?${params}`),
+};
+
+let source = remoteSource;
 
 function buildQuery() {
   const params = new URLSearchParams({ page: state.page, pageSize: PAGE_SIZE });
@@ -66,7 +83,7 @@ async function loadPage() {
   const summary = $('result-summary');
   summary.textContent = 'Loading…';
   try {
-    const data = await fetchJson(`/api/puzzles?${buildQuery()}`);
+    const data = await source.getPuzzles(buildQuery());
     state.rows = data.rows;
     state.totalPages = data.totalPages;
     // Server may clamp; keep the input honest.
@@ -217,8 +234,10 @@ function initRatingFilter() {
   });
 }
 
-function initThemeFilter(themes) {
+/** (Re)fill the theme dropdown — called at startup and per dropped CSV. */
+function populateThemeList(themes) {
   const list = $('theme-list');
+  list.replaceChildren();
   for (const { name, count } of themes) {
     const li = document.createElement('li');
     const label = document.createElement('label');
@@ -239,6 +258,10 @@ function initThemeFilter(themes) {
     li.appendChild(label);
     list.appendChild(li);
   }
+}
+
+function initThemeControls() {
+  const list = $('theme-list');
 
   // Narrow the checkbox list as the user types (client-side, 73 items).
   $('theme-search').addEventListener('input', (e) => {
@@ -300,21 +323,84 @@ function initPagination() {
 }
 
 /* ------------------------------------------------------------------ */
+/* Dropped CSV handling                                                 */
+/* ------------------------------------------------------------------ */
+
+function applyMeta(meta, originLabel) {
+  $('dataset-info').textContent =
+    `${originLabel ? originLabel + ' · ' : ''}${meta.totalPuzzles.toLocaleString()} puzzles · ratings ${meta.ratingMin}–${meta.ratingMax} · ${meta.themes.length} themes`;
+  populateThemeList(meta.themes);
+  updateThemeSummary();
+}
+
+/** Index a dropped/browsed CSV in the browser and switch the app to it. */
+async function loadLocalFile(file) {
+  const summary = $('result-summary');
+  if (!/\.csv$/i.test(file.name)) {
+    summary.textContent = `"${file.name}" is not a .csv file.`;
+    return;
+  }
+  try {
+    const local = await LocalSource.open(file, (read, total, rows) => {
+      summary.textContent =
+        `Indexing ${file.name}… ${Math.round((read / total) * 100)}% (${rows.toLocaleString()} rows)`;
+    });
+    source = local;
+    state.page = 1;
+    state.selectedThemes.clear();
+    state.selectedPuzzleId = null;
+    applyMeta(await source.getMeta(), file.name);
+    loadPage();
+  } catch (err) {
+    summary.textContent = `Could not load ${file.name}: ${err.message}`;
+  }
+}
+
+function initDropZone() {
+  const zone = $('drop-zone');
+  const input = $('csv-file-input');
+
+  $('csv-browse').addEventListener('click', () => input.click());
+  input.addEventListener('change', () => {
+    if (input.files[0]) loadLocalFile(input.files[0]);
+    input.value = ''; // allow re-selecting the same file
+  });
+
+  // Accept drops anywhere on the page, highlighting the banner while dragging.
+  window.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    zone.classList.add('drag-active');
+  });
+  window.addEventListener('dragleave', (e) => {
+    if (!e.relatedTarget) zone.classList.remove('drag-active');
+  });
+  window.addEventListener('drop', (e) => {
+    e.preventDefault();
+    zone.classList.remove('drag-active');
+    const file = e.dataTransfer.files && e.dataTransfer.files[0];
+    if (file) loadLocalFile(file);
+  });
+}
+
+/* ------------------------------------------------------------------ */
 /* Init                                                                 */
 /* ------------------------------------------------------------------ */
 
 async function init() {
   initRatingFilter();
+  initThemeControls();
   initPagination();
+  initDropZone();
   try {
-    const meta = await fetchJson('/api/meta');
-    $('dataset-info').textContent =
-      `${meta.totalPuzzles.toLocaleString()} puzzles · ratings ${meta.ratingMin}–${meta.ratingMax} · ${meta.themes.length} themes`;
-    initThemeFilter(meta.themes);
-  } catch (err) {
-    $('result-summary').textContent = `Failed to load dataset info: ${err.message}`;
+    const meta = await remoteSource.getMeta();
+    applyMeta(meta, 'Server dataset');
+    loadPage();
+  } catch {
+    // No API (static hosting, e.g. GitHub Pages) — wait for a dropped CSV.
+    $('dataset-info').textContent = 'No dataset loaded';
+    $('result-summary').textContent =
+      'Drop a Lichess puzzle CSV anywhere on this page to start.';
   }
-  loadPage();
 }
 
 init();

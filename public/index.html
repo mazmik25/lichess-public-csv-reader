@@ -13,6 +13,18 @@
     <span id="dataset-info" class="dataset-info"></span>
   </header>
 
+  <!-- Drop target for loading a CSV client-side (drops anywhere on the page
+       also work; see initDropZone in app.js). This is how data gets in on
+       static hosting, where there is no API. -->
+  <section id="drop-zone" class="drop-zone" aria-label="Load a CSV file">
+    <span>
+      Drop a Lichess puzzle CSV anywhere on this page, or
+      <button id="csv-browse" type="button" class="link-btn">browse for a file</button>
+      — it is indexed locally in your browser and never uploaded.
+    </span>
+    <input id="csv-file-input" type="file" accept=".csv" hidden>
+  </section>
+
   <!-- Filter bar: each control maps 1:1 to an API query parameter,
        so new filters only need a control here + an entry in FILTERS (server). -->
   <section class="filters" aria-label="Filters">
@@ -72,6 +84,7 @@
   <!-- Vendored locally so the app works fully offline (see README) -->
   <script src="vendor/jquery-3.7.1.min.js"></script>
   <script src="vendor/chessboard-1.0.0.min.js"></script>
+  <script src="local-source.js"></script>
   <script src="chess-preview.js"></script>
   <script src="board-preview.js"></script>
   <script src="app.js"></script>

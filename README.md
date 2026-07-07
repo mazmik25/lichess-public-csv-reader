@@ -8,14 +8,17 @@ loading the whole file into memory.
 
 ```
 csv-reader/
-├── lichess_db_puzzle.csv   # the dataset (not committed anywhere)
+├── lichess_db_puzzle.csv   # the dataset (gitignored — exceeds GitHub's 100 MB limit)
 ├── server.js               # dependency-free Node HTTP server + JSON API
 ├── indexer.js              # streaming index builder + binary cache + row reader
-├── puzzles.idx             # generated binary index cache (~110 MB, auto-created)
+├── puzzles.idx             # generated binary index cache (~110 MB, gitignored)
+├── .github/workflows/
+│   └── deploy.yml          # deploys public/ to GitHub Pages on push to main
 ├── public/
-│   ├── index.html          # markup: filters, list, details panel, pagination
+│   ├── index.html          # markup: drop zone, filters, list, details, pagination
 │   ├── style.css           # minimal styling, responsive at <900px
-│   ├── app.js              # vanilla JS: state, API calls, rendering
+│   ├── app.js              # vanilla JS: state, data-source calls, rendering
+│   ├── local-source.js     # in-browser CSV indexing + querying for dropped files
 │   ├── chess-preview.js    # DOM-free FEN parsing + UCI move logic (Node-testable)
 │   ├── board-preview.js    # board rendering via chessboard.js + PNG export
 │   ├── vendor/             # chessboard.js 1.0.0, its CSS, jQuery 3.7.1 (offline)
@@ -38,7 +41,40 @@ progress is logged). The index is cached to `puzzles.idx`, so every later
 start loads in about a second. If the CSV changes (size/mtime), the index is
 rebuilt automatically. Delete `puzzles.idx` to force a rebuild.
 
-## Why a backend is needed
+If `lichess_db_puzzle.csv` is not present, the server still starts and serves
+the frontend; load data by dropping a CSV onto the page (below).
+
+## Drag & drop a CSV (no backend needed)
+
+Instead of placing the CSV next to `server.js`, you can **drop a puzzle CSV
+anywhere onto the page** (or click *browse for a file* in the banner). The
+file is then indexed **entirely in the browser** by `public/local-source.js`,
+which ports the server-side technique to the File API:
+
+- the File is streamed once to build the same ~18 B/row typed-array index
+  (offsets + ratings + 96-bit theme bitmasks), with live progress;
+- filters run as bitwise scans over those arrays, exactly like the server;
+- full rows are fetched with positioned `File.slice()` reads — the CSV is
+  never held in memory and **never uploaded anywhere**.
+
+The CSV must have the standard Lichess puzzle columns
+(`PuzzleId,FEN,Moves,Rating,…`). This mode is what makes the static
+deployment below possible.
+
+## Deploying to GitHub Pages
+
+`.github/workflows/deploy.yml` publishes `public/` to GitHub Pages on every
+push to `main`. One-time setup: in the repo, **Settings → Pages → Build and
+deployment → Source: GitHub Actions**.
+
+GitHub Pages is static hosting — there is no Node server, and the dataset
+cannot be committed anyway (GitHub rejects files over 100 MB; the CSV is
+~1.1 GB and `puzzles.idx` ~110 MB, both gitignored). So on the deployed site
+the app starts empty and the visitor drops their own copy of
+`lichess_db_puzzle.csv` onto the page; everything runs client-side from
+there.
+
+## Why a backend is needed (for the classic mode)
 
 The requirements prefer a no-backend solution, but at 1.1 GB / 6 M rows a
 purely static approach fails on its own goals:
@@ -52,6 +88,13 @@ purely static approach fails on its own goals:
 Given that a static server is unavoidable, a ~150-line dependency-free Node
 server that also answers filter queries is the minimal-setup option: one
 command, no packages, and the browser only ever receives 20 rows at a time.
+
+The drag-and-drop mode sidesteps the `fetch()` limitation via the File API
+(the user hands the browser the file explicitly), at two costs the server
+mode doesn't have: every page load re-indexes the CSV (~30–60 s — there is
+no `puzzles.idx` cache in the browser), and the ~110 MB index lives in the
+tab's memory. Both modes coexist: the app uses the API when the server has
+the dataset and falls back to drop mode otherwise.
 
 ## Optimization techniques
 

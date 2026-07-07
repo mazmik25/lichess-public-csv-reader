@@ -34,6 +34,23 @@ body {
 .topbar h1 { margin: 0; font-size: 18px; }
 .dataset-info { color: var(--muted); font-size: 12px; }
 
+/* ---------- CSV drop zone ---------- */
+
+.drop-zone {
+  padding: 8px 20px;
+  background: var(--accent-soft);
+  border-bottom: 1px dashed var(--accent);
+  color: var(--muted);
+  font-size: 12px;
+  text-align: center;
+}
+
+.drop-zone.drag-active {
+  background: var(--accent);
+  color: #fff;
+}
+.drop-zone.drag-active .link-btn { color: #fff; }
+
 /* ---------- Filters ---------- */
 
 .filters {
