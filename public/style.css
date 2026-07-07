@@ -1,0 +1,287 @@
+/* Lichess Puzzle Browser — minimal, clean styling. */
+
+:root {
+  --bg: #f6f7f9;
+  --panel: #ffffff;
+  --border: #dde1e6;
+  --text: #1f2328;
+  --muted: #6a737d;
+  --accent: #3b6ea5;
+  --accent-soft: #e8f0f9;
+  --hover: #f0f4f8;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  font: 14px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif;
+  color: var(--text);
+  background: var(--bg);
+}
+
+/* ---------- Header ---------- */
+
+.topbar {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  padding: 14px 20px;
+  background: var(--panel);
+  border-bottom: 1px solid var(--border);
+}
+
+.topbar h1 { margin: 0; font-size: 18px; }
+.dataset-info { color: var(--muted); font-size: 12px; }
+
+/* ---------- Filters ---------- */
+
+.filters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 16px;
+  padding: 12px 20px;
+  background: var(--panel);
+  border-bottom: 1px solid var(--border);
+}
+
+.filter-group { display: flex; flex-direction: column; gap: 4px; }
+.filter-group label { font-size: 12px; font-weight: 600; color: var(--muted); }
+
+select, input[type="search"], input[type="number"] {
+  padding: 6px 8px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  font: inherit;
+  background: var(--panel);
+}
+
+.badge {
+  display: inline-block;
+  min-width: 18px;
+  padding: 0 5px;
+  border-radius: 9px;
+  background: var(--accent);
+  color: #fff;
+  font-size: 11px;
+  text-align: center;
+}
+
+/* Theme multi-select dropdown */
+
+.theme-dropdown { position: relative; }
+
+.theme-dropdown summary {
+  list-style: none;
+  cursor: pointer;
+  padding: 6px 28px 6px 8px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--panel);
+  min-width: 180px;
+  max-width: 280px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.theme-dropdown summary::-webkit-details-marker { display: none; }
+.theme-dropdown summary::after {
+  content: "▾";
+  position: absolute;
+  right: 10px;
+  color: var(--muted);
+}
+
+.theme-panel {
+  position: absolute;
+  z-index: 10;
+  margin-top: 4px;
+  width: 300px;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.12);
+  padding: 8px;
+}
+
+.theme-panel-actions { display: flex; gap: 8px; margin-bottom: 6px; }
+.theme-panel-actions input { flex: 1; }
+
+.link-btn {
+  border: none;
+  background: none;
+  color: var(--accent);
+  cursor: pointer;
+  font: inherit;
+}
+.link-btn:hover { text-decoration: underline; }
+
+.theme-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.theme-list li label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 6px;
+  border-radius: 4px;
+  cursor: pointer;
+}
+.theme-list li label:hover { background: var(--hover); }
+.theme-list .theme-count { margin-left: auto; color: var(--muted); font-size: 12px; }
+
+.filter-status { margin-left: auto; color: var(--muted); font-size: 12px; align-self: center; }
+
+/* ---------- Layout ---------- */
+
+.layout {
+  display: flex;
+  gap: 16px;
+  padding: 16px 20px;
+  align-items: flex-start;
+}
+
+.list-pane { flex: 1 1 60%; min-width: 0; }
+.details-pane {
+  flex: 0 0 340px;
+  position: sticky;
+  top: 16px;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 16px;
+}
+
+/* ---------- Puzzle table ---------- */
+
+.puzzle-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.puzzle-table th, .puzzle-table td {
+  padding: 8px 12px;
+  text-align: left;
+  border-bottom: 1px solid var(--border);
+}
+
+.puzzle-table th {
+  background: var(--hover);
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: var(--muted);
+}
+
+.puzzle-table tbody tr { cursor: pointer; }
+.puzzle-table tbody tr:hover { background: var(--hover); }
+.puzzle-table tbody tr.selected { background: var(--accent-soft); }
+
+.puzzle-table .puzzle-id { font-family: ui-monospace, Consolas, monospace; }
+
+.theme-tag {
+  display: inline-block;
+  margin: 1px 3px 1px 0;
+  padding: 1px 7px;
+  border-radius: 10px;
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.empty-row td { text-align: center; color: var(--muted); padding: 24px; cursor: default; }
+
+/* ---------- Pagination ---------- */
+
+.pagination {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  justify-content: center;
+  padding: 14px 0;
+}
+
+.pagination button {
+  padding: 6px 12px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--panel);
+  cursor: pointer;
+  font: inherit;
+}
+.pagination button:hover:not(:disabled) { background: var(--hover); }
+.pagination button:disabled { opacity: 0.45; cursor: default; }
+
+.page-indicator { color: var(--muted); }
+.page-indicator input { width: 80px; text-align: center; }
+
+/* ---------- Details panel ---------- */
+
+.details-placeholder { color: var(--muted); text-align: center; margin: 32px 0; }
+
+.details-pane h2 {
+  margin: 0 0 12px;
+  font-size: 16px;
+  font-family: ui-monospace, Consolas, monospace;
+}
+
+/* FEN board preview (rendered by chessboard.js; see board-preview.js) */
+
+.board-preview {
+  max-width: 304px;
+  margin: 0 auto 14px;
+  text-align: center;
+}
+
+.board-caption {
+  margin: 8px 0;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.board-actions {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+}
+
+.save-png-btn {
+  padding: 5px 12px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--panel);
+  cursor: pointer;
+  font: inherit;
+  font-size: 12px;
+  color: var(--accent);
+}
+.save-png-btn:hover:not(:disabled) { background: var(--hover); }
+.save-png-btn:disabled { opacity: 0.5; cursor: default; }
+
+.details-grid { display: grid; grid-template-columns: auto 1fr; gap: 6px 12px; }
+.details-grid dt { font-weight: 600; color: var(--muted); font-size: 12px; align-self: center; }
+.details-grid dd { margin: 0; word-break: break-word; }
+
+.details-grid .mono { font-family: ui-monospace, Consolas, monospace; font-size: 12px; }
+
+.details-links { margin-top: 14px; display: flex; gap: 12px; }
+.details-links a { color: var(--accent); }
+
+/* ---------- Responsive ---------- */
+
+@media (max-width: 900px) {
+  .layout { flex-direction: column; }
+  .details-pane { flex: none; width: 100%; position: static; }
+  .filter-status { margin-left: 0; width: 100%; }
+}

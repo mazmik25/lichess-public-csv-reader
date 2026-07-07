@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Lichess Puzzle Browser</title>
+  <link rel="stylesheet" href="vendor/chessboard-1.0.0.min.css">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="topbar">
+    <h1>Lichess Puzzle Browser</h1>
+    <span id="dataset-info" class="dataset-info"></span>
+  </header>
+
+  <!-- Filter bar: each control maps 1:1 to an API query parameter,
+       so new filters only need a control here + an entry in FILTERS (server). -->
+  <section class="filters" aria-label="Filters">
+    <div class="filter-group">
+      <label for="rating-select">Rating</label>
+      <select id="rating-select">
+        <option value="">All ratings</option>
+        <!-- Bands injected by app.js from RATING_BANDS -->
+      </select>
+    </div>
+
+    <div class="filter-group filter-group--themes">
+      <label>Themes <span id="theme-count-badge" class="badge" hidden></span></label>
+      <details id="theme-dropdown" class="theme-dropdown">
+        <summary id="theme-summary">Any theme</summary>
+        <div class="theme-panel">
+          <div class="theme-panel-actions">
+            <input id="theme-search" type="search" placeholder="Find a theme…" autocomplete="off">
+            <button id="theme-clear" type="button" class="link-btn">Clear</button>
+          </div>
+          <ul id="theme-list" class="theme-list"><!-- checkboxes injected by app.js --></ul>
+        </div>
+      </details>
+    </div>
+
+    <div class="filter-status" id="result-summary" role="status"></div>
+  </section>
+
+  <main class="layout">
+    <!-- Puzzle list -->
+    <section class="list-pane" aria-label="Puzzle list">
+      <table class="puzzle-table">
+        <thead>
+          <tr><th>Puzzle ID</th><th>Rating</th><th>Themes</th></tr>
+        </thead>
+        <tbody id="puzzle-rows"><!-- rows injected by app.js --></tbody>
+      </table>
+
+      <nav class="pagination" aria-label="Pagination">
+        <button id="page-first" type="button" title="First page">&laquo;</button>
+        <button id="page-prev" type="button">&lsaquo; Prev</button>
+        <span class="page-indicator">
+          Page <input id="page-input" type="number" min="1" value="1"> of <span id="page-total">1</span>
+        </span>
+        <button id="page-next" type="button">Next &rsaquo;</button>
+        <button id="page-last" type="button" title="Last page">&raquo;</button>
+      </nav>
+    </section>
+
+    <!-- Details panel for the clicked puzzle -->
+    <aside class="details-pane" id="details-pane" aria-label="Puzzle details">
+      <p class="details-placeholder" id="details-placeholder">Select a puzzle to see its details.</p>
+      <div id="details-content" hidden></div>
+    </aside>
+  </main>
+
+  <!-- Vendored locally so the app works fully offline (see README) -->
+  <script src="vendor/jquery-3.7.1.min.js"></script>
+  <script src="vendor/chessboard-1.0.0.min.js"></script>
+  <script src="chess-preview.js"></script>
+  <script src="board-preview.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
